@@ -1,8 +1,9 @@
 #include "revert_string.h"
+#include "string.h"
 
 void RevertString(char *str)
 {
-	int size = sizeof(str), i = 0;
+	int size = strlen(str), i = 0;
 	char temp;
 	for (i = 0; i < size / 2; i++){
 		temp = str[i];
