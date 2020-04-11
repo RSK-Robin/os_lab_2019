@@ -91,7 +91,27 @@ int main(int argc, char **argv) {
   struct timeval start_time;
   gettimeofday(&start_time, NULL);
 
+  /////////////////////////////////////////////
+  const int part_size = array_size / pnum; // размер сегмента для всех потоков, кроме последнего
+  const char* file_prefix = "part_result_";
+  char fname[32];
+
+  // выделяем память под дескрипторы, так как количество потоков заранее неизвестно
+// каждый дескриптор описывается массивом из 2 int: int fd[2]
+// по два дескриптора на каждый поток [ int fd0[2], int fd1[2], int fd3[2] ]
+  int* fd_array, *fd;
+  if (!with_files) {
+  fd_array = (int*)malloc(sizeof(int) * 2 * pnum);
+  }
+
   for (int i = 0; i < pnum; i++) {
+      if(!with_files){
+        fd = fd_array + (i * 2); // указатель на пару дескрипторов для потока
+        if (pipe(fd) == -1) { // создаем канал для каждого процесса
+        exit(EXIT_FAILURE);
+        }   
+      }
+
     pid_t child_pid = fork();
     if (child_pid >= 0) {
       // successful fork
@@ -99,12 +119,21 @@ int main(int argc, char **argv) {
       if (child_pid == 0) {
         // child process
 
-        // parallel somehow
+        const unsigned int begin = i * part_size;
+        const unsigned int end = (i == pnum-1) ? array_size - 1 : begin+part_size; // последний сегмент может быть не кратен количеству потоков
+        struct MinMax part_minmax = GetMinMax(array, begin, end);
 
-        if (with_files) {
-          // use files here
+        if(with_files) {
+            printf("READING \n");
+          sprintf(fname, "%s%d", file_prefix, i);
+          FILE* fp = fopen(fname, "w");
+          fprintf(fp, "%d %d", part_minmax.min, part_minmax.max);
+          fclose(fp); 
         } else {
-          // use pipe here
+          close(fd[0]);
+          write(fd[1], &part_minmax.min, sizeof(part_minmax.min));
+          write(fd[1], &part_minmax.max, sizeof(part_minmax.max));
+          close(fd[1]);
         }
         return 0;
       }
@@ -126,13 +155,20 @@ int main(int argc, char **argv) {
   min_max.max = INT_MIN;
 
   for (int i = 0; i < pnum; i++) {
-    int min = INT_MAX;
-    int max = INT_MIN;
-
+    int min, max;
     if (with_files) {
-      // read from files
+        printf("WRITING \n");
+      sprintf(fname, "%s%d", file_prefix, i);
+      FILE* fp = fopen(fname, "r");
+      fscanf(fp, "%d %d", &min, &max);
+      fclose(fp);
     } else {
       // read from pipes
+      fd = fd_array + (i * 2);
+      close(fd[1]);
+      read(fd[0], &min, sizeof(min));
+      read(fd[0], &max, sizeof(max));
+      close(fd[0]);
     }
 
     if (min < min_max.min) min_max.min = min;
@@ -146,6 +182,8 @@ int main(int argc, char **argv) {
   elapsed_time += (finish_time.tv_usec - start_time.tv_usec) / 1000.0;
 
   free(array);
+  if(!with_files)
+    free(fd_array);
 
   printf("Min: %d\n", min_max.min);
   printf("Max: %d\n", min_max.max);
