@@ -40,18 +40,15 @@ int main(int argc, char **argv) {
         switch (option_index) {
           case 0:
             seed = atoi(optarg);
-            // your code here
-            // error handling
+            
             break;
           case 1:
             array_size = atoi(optarg);
-            // your code here
-            // error handling
+            
             break;
           case 2:
             pnum = atoi(optarg);
-            // your code here
-            // error handling
+            
             break;
           case 3:
             with_files = true;
@@ -91,14 +88,12 @@ int main(int argc, char **argv) {
   struct timeval start_time;
   gettimeofday(&start_time, NULL);
 
-  /////////////////////////////////////////////
-  const int part_size = array_size / pnum; // размер сегмента для всех потоков, кроме последнего
+  
+  const int part_size = array_size / pnum; 
   const char* file_prefix = "part_result_";
   char fname[32];
 
-  // выделяем память под дескрипторы, так как количество потоков заранее неизвестно
-// каждый дескриптор описывается массивом из 2 int: int fd[2]
-// по два дескриптора на каждый поток [ int fd0[2], int fd1[2], int fd3[2] ]
+  
   int* fd_array, *fd;
   if (!with_files) {
   fd_array = (int*)malloc(sizeof(int) * 2 * pnum);
@@ -106,8 +101,8 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < pnum; i++) {
       if(!with_files){
-        fd = fd_array + (i * 2); // указатель на пару дескрипторов для потока
-        if (pipe(fd) == -1) { // создаем канал для каждого процесса
+        fd = fd_array + (i * 2); 
+        if (pipe(fd) == -1) { 
         exit(EXIT_FAILURE);
         }   
       }
@@ -120,7 +115,7 @@ int main(int argc, char **argv) {
         // child process
 
         const unsigned int begin = i * part_size;
-        const unsigned int end = (i == pnum-1) ? array_size - 1 : begin+part_size; // последний сегмент может быть не кратен количеству потоков
+        const unsigned int end = (i == pnum-1) ? array_size - 1 : begin+part_size; 
         struct MinMax part_minmax = GetMinMax(array, begin, end);
 
         if(with_files) {
@@ -144,7 +139,7 @@ int main(int argc, char **argv) {
     }
   }
   while (active_child_processes > 0) {
-    // your code here
+    
  
     wait(0);
     active_child_processes -= 1;
