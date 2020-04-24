@@ -143,10 +143,10 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
-
   while (active_child_processes > 0) {
     // your code here
-
+ 
+    wait(0);
     active_child_processes -= 1;
   }
 
