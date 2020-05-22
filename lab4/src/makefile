@@ -11,6 +11,9 @@ task2 :
 task3 : 
 	$(CC) -o task3 process_memory.c $(CFLAGS)
 
+task5 : utils.o 
+	$(CC) $(OPT) $(THRD) -std=gnu99 -pthread -o task5 utils.o parallel_sum.c $(CFLAGS)
+
 sequential_min_max : utils.o find_min_max.o utils.h find_min_max.h
 	$(CC) -o sequential_min_max find_min_max.o utils.o sequential_min_max.c $(CFLAGS)
 

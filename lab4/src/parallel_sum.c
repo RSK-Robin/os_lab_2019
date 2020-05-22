@@ -6,7 +6,7 @@
 #include <sys/time.h>
 
 #include <pthread.h>
-#include "./task1/utils.h"
+#include "utils.h"
 
 void GenerateArray(int *array, unsigned int array_size, unsigned int seed);
 
